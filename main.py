@@ -24,38 +24,34 @@ def get_html(url):
     return BeautifulSoup(response.text, 'lxml')
 
 
-def get_news_ria(soup):
-    div_list = soup.find_all('div', class_='cell-list__list')
+def get_news(soup, news, div_tag=None, a_tag=None, div_class=None,
+             a_class=None, ria=None, rbc=None, tag=None):
+    item_list = soup.find_all(div_tag or a_tag, class_=ria or rbc)
 
-    for item in div_list:
-        name = item.find('div',
-                         class_='cell-list__item m-no-image').text[0:-5]
-        url = item.find('a').get('href')
+    for item in item_list:
+        name = item.find(tag, class_=div_class or a_class).text
+        url = item.find('a').get('href') if div_tag else item.get('href')
 
         data = {'name': name,
                 'url': url
                 }
 
         write_csv(data)
-    return "RIA новости собраны"
+    return f'Новости {news} собраны'
+
+
+def get_news_ria(soup):
+    return get_news(soup, 'RIA', div_tag='div',
+                    div_class='cell-list__item m-no-image',
+                    ria='cell-list__list', tag='div')
 
 
 def get_news_rbc(soup):
-    a_list = soup.find_all('a', class_='main__feed__link')
-
-    for item in a_list:
-        name = item.find('span', class_='main__feed__title').text
-        url = item.get('href')
-
-        data = {'name': name,
-                'url': url
-                }
-
-        write_csv(data)
-    return "RBC новости собраны"
+    return get_news(soup, 'RBC', a_tag='a', a_class='main__feed__title',
+                    rbc='main__feed__link', tag='span')
 
 
-def get_news():
+def main():
     sites = {
         'RBC': get_news_rbc(get_html('https://rbc.ru')),
         'RIA': get_news_ria(get_html('https://ria.ru')),
@@ -65,4 +61,4 @@ def get_news():
 
 
 if __name__ == '__main__':
-    get_news()
+    main()
